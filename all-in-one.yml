@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-volume-claim
+  namespace: postgres
+spec:
+  storageClassName: postgres-volume
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-volume
+  namespace: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: postgres-volume
+  local:
+    path: /mnt/kube-postgres
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - lmsdev.shop
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: postgres
+type: Opaque
+data:
+  POSTGRES_USER: dXNlcgo=
+  POSTGRES_PASSWORD: cGFzc3dvcmQK
+  PGDATA: L2RhdGEvZGIK
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: postgres
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:12
+          env:
+            - name: POSTGRES_USER
+              value: /etc/secret/POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              value: /etc/secret/POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /etc/secret/PGDATA
+          volumeMounts:
+            - name: postgres-secret
+              mountPath: /etc/secret
+              readOnly: true
+            - name: postgres-data
+              mountPath: /data/db
+      nodeSelector:
+        kubernetes.io/hostname: lmsdev.shop
+      volumes:
+        - name: postgres-secret
+          secret:
+            secretName: postgres-secret
+            items:
+              - key: POSTGRES_USER
+                path: POSTGRES_USER
+                mode: 0444
+              - key: POSTGRES_PASSWORD
+                path: POSTGRES_PASSWORD
+                mode: 0444
+              - key: PGDATA
+                path: PGDATA
+                mode: 0444
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-volume-claim
+---
+
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: postgres-volume
+  namespace: postgres
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+
