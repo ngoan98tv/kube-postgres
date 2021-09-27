@@ -99,10 +99,12 @@ spec:
                   name: postgres-secret
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
+              valueFrom:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
             - name: PGDATA
+              valueFrom:
                 secretKeyRef:
                   name: postgres-secret
                   key: PGDATA
