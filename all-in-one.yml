@@ -94,14 +94,14 @@ spec:
           image: postgres:12
           env:
             - name: POSTGRES_USER
-              value: /etc/secret/POSTGRES_USER
+              value: /etc/postgres-secret/POSTGRES_USER
             - name: POSTGRES_PASSWORD
-              value: /etc/secret/POSTGRES_PASSWORD
+              value: /etc/postgres-secret/POSTGRES_PASSWORD
             - name: PGDATA
-              value: /etc/secret/PGDATA
+              value: /etc/postgres-secret/PGDATA
           volumeMounts:
             - name: postgres-secret
-              mountPath: /etc/secret
+              mountPath: /etc/postgres-secret
               readOnly: true
             - name: postgres-data
               mountPath: /data/db
