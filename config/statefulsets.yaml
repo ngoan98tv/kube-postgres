@@ -17,22 +17,9 @@ spec:
       containers:
         - name: postgres
           image: postgres:12
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: POSTGRES_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: POSTGRES_PASSWORD
-            - name: PGDATA
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: PGDATA
+          envFrom:
+            - secretRef:
+                name: postgres-secret
           volumeMounts:
             - name: postgres-data
               mountPath: /data/db
