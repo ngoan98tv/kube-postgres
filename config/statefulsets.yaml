@@ -19,33 +19,24 @@ spec:
           image: postgres:12
           env:
             - name: POSTGRES_USER
-              value: /etc/postgres-secret/POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
-              value: /etc/postgres-secret/POSTGRES_PASSWORD
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
             - name: PGDATA
-              value: /etc/postgres-secret/PGDATA
+                secretKeyRef:
+                  name: postgres-secret
+                  key: PGDATA
           volumeMounts:
-            - name: postgres-secret
-              mountPath: /etc/postgres-secret
-              readOnly: true
             - name: postgres-data
               mountPath: /data/db
       nodeSelector:
         kubernetes.io/hostname: lmsdev.shop
       volumes:
-        - name: postgres-secret
-          secret:
-            secretName: postgres-secret
-            items:
-              - key: POSTGRES_USER
-                path: POSTGRES_USER
-                mode: 0444
-              - key: POSTGRES_PASSWORD
-                path: POSTGRES_PASSWORD
-                mode: 0444
-              - key: PGDATA
-                path: PGDATA
-                mode: 0444
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-volume-claim
